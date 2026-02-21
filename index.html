@@ -1,83 +1,74 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>İstanbul AR</title>
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image-aframe.prod.js"></script>
+    <title>Istanbul AR</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-aframe.prod.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
-        .mindar-ui-loading, .mindar-ui-scanning, .mindar-ui-compatibility { display: none !important; }
-        
+        body { margin: 0; overflow: hidden; background-color: #000; }
         #ui-container {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 10000;
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; background: #000; z-index: 999;
         }
-        #startButton {
-            padding: 20px 40px; background: #d32f2f; color: #fff;
-            border: none; border-radius: 50px; font-size: 20px; font-weight: bold;
+        #btn {
+            padding: 20px 40px; background: #ff0000; color: #fff;
+            border: none; border-radius: 50px; font-weight: bold; font-size: 18px;
         }
-        /* Hata bildirim kutusu */
-        #error-log {
-            position: absolute; bottom: 10px; width: 100%; color: red;
-            font-size: 12px; text-align: center; z-index: 10001; background: rgba(0,0,0,0.5);
-        }
+        /* MindAR'ın kendi yükleme ekranını zorla gizliyoruz */
+        .mindar-ui-loading, .mindar-ui-scanning { display: none !important; }
     </style>
 </head>
 <body>
 
     <div id="ui-container">
-        <button id="startButton">KAMERAYI BAŞLAT</button>
-        <p style="color:white; margin-top:15px;">Lütfen bekleyin...</p>
+        <button id="btn">BAŞLAT</button>
+        <p style="color: white; margin-top: 10px;">Kameraya izin verin.</p>
     </div>
-    
-    <div id="error-log"></div>
 
     <a-scene 
-        mindar-image="imageTargetSrc: ./targets_1.mind; uiLoading: no; uiScanning: no;" 
-        embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
-        vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        mindar-image="imageTargetSrc: ./targets_1.mind; autoStart: false; uiLoading: no; uiScanning: no;" 
+        embedded color-space="sRGB" 
+        renderer="colorManagement: true, physicallyCorrectLights" 
+        vr-mode-ui="enabled: false" 
+        device-orientation-permission-ui="enabled: false">
         
         <a-assets>
-            <video id="fethiVideo" src="Video_2.mp4" preload="auto" loop crossorigin="anonymous" playsinline></video>
-            <audio id="fethiMuzik" src="muzik.mp3" preload="auto" loop crossorigin="anonymous"></audio>
+            <video id="v" src="Video_2.mp4" preload="auto" loop crossorigin="anonymous" playsinline></video>
+            <audio id="s" src="muzik.mp3" preload="auto" loop crossorigin="anonymous"></audio>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-entity mindar-image-target="targetIndex: 0" id="imageTarget">
-            <a-video src="#fethiVideo" position="0 0 0" height="1" width="1.8"></a-video>
+        <a-entity mindar-image-target="targetIndex: 0" id="target">
+            <a-video src="#v" position="0 0 0" height="1" width="1.7"></a-video>
         </a-entity>
     </a-scene>
 
     <script>
-        const uiContainer = document.getElementById('ui-container');
-        const startButton = document.getElementById('startButton');
-        const errorLog = document.getElementById('error-log');
-        const video = document.getElementById('fethiVideo');
-        const audio = document.getElementById('fethiMuzik');
+        const btn = document.querySelector("#btn");
+        const ui = document.querySelector("#ui-container");
+        const scene = document.querySelector("a-scene");
+        const video = document.querySelector("#v");
+        const audio = document.querySelector("#s");
+        const target = document.querySelector("#target");
 
-        // Hataları ekrana yazdıralım
-        window.onerror = function(msg, url, line) {
-            errorLog.innerHTML = "Hata: " + msg + " (Satır: " + line + ")";
-        };
-
-        startButton.addEventListener('click', () => {
-            uiContainer.style.display = 'none';
-            
-            // Video ve ses tetikleme
-            video.play().then(() => { video.pause(); }).catch(e => errorLog.innerHTML = "Video Hatası: " + e);
-            audio.play().then(() => { audio.pause(); }).catch(e => errorLog.innerHTML = "Ses Hatası: " + e);
+        btn.addEventListener('click', () => {
+            ui.style.display = "none";
+            // MindAR'ı elle (manual) başlatıyoruz
+            scene.systems["mindar-image-system"].start(); 
+            // Sesleri hazırla
+            video.play().then(() => { video.pause(); });
+            audio.play().then(() => { audio.pause(); });
         });
 
-        const imageTarget = document.getElementById('imageTarget');
-        imageTarget.addEventListener('targetFound', () => {
+        target.addEventListener("targetFound", () => {
             video.play();
             audio.play();
         });
-        imageTarget.addEventListener('targetLost', () => {
+
+        target.addEventListener("targetLost", () => {
             video.pause();
             audio.pause();
         });
