@@ -3,49 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>İstanbul'un Fethi AR</title>
+    <title>İstanbul AR</title>
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image-aframe.prod.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+        .mindar-ui-loading, .mindar-ui-scanning, .mindar-ui-compatibility { display: none !important; }
         
-        /* MindAR dairesini ve taranıyor yazılarını gizle */
-        .mindar-ui-loading, .mindar-ui-scanning, .mindar-ui-compatibility {
-            display: none !important;
-        }
-
         #ui-container {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 10000;
         }
-        
         #startButton {
-            padding: 20px 50px; background-color: #d32f2f; color: #fff;
-            border: none; border-radius: 50px; font-size: 22px; font-weight: bold;
-            cursor: pointer; box-shadow: 0 4px 20px rgba(211, 47, 47, 0.5);
+            padding: 20px 40px; background: #d32f2f; color: #fff;
+            border: none; border-radius: 50px; font-size: 20px; font-weight: bold;
+        }
+        /* Hata bildirim kutusu */
+        #error-log {
+            position: absolute; bottom: 10px; width: 100%; color: red;
+            font-size: 12px; text-align: center; z-index: 10001; background: rgba(0,0,0,0.5);
         }
     </style>
 </head>
 <body>
 
     <div id="ui-container">
-        <button id="startButton">KAMERAYI AÇ</button>
-        <p style="color:white; margin-top:20px; font-family: sans-serif;">Kamera izni isteyince "İzin Ver" deyin.</p>
+        <button id="startButton">KAMERAYI BAŞLAT</button>
+        <p style="color:white; margin-top:15px;">Lütfen bekleyin...</p>
     </div>
+    
+    <div id="error-log"></div>
 
     <a-scene 
         mindar-image="imageTargetSrc: ./targets_1.mind; uiLoading: no; uiScanning: no;" 
-        embedded 
-        color-space="sRGB" 
-        renderer="colorManagement: true, physicallyCorrectLights" 
-        vr-mode-ui="enabled: false" 
-        device-orientation-permission-ui="enabled: false"
-        loading-screen="enabled: false">
+        embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
+        vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
         
         <a-assets>
-            <video id="fethiVideo" src="./Video_2.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
-            <audio id="fethiMuzik" src="./muzik.mp3" preload="auto" loop crossorigin="anonymous"></audio>
+            <video id="fethiVideo" src="Video_2.mp4" preload="auto" loop crossorigin="anonymous" playsinline></video>
+            <audio id="fethiMuzik" src="muzik.mp3" preload="auto" loop crossorigin="anonymous"></audio>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -58,38 +55,29 @@
     <script>
         const uiContainer = document.getElementById('ui-container');
         const startButton = document.getElementById('startButton');
+        const errorLog = document.getElementById('error-log');
         const video = document.getElementById('fethiVideo');
         const audio = document.getElementById('fethiMuzik');
-        const imageTarget = document.getElementById('imageTarget');
+
+        // Hataları ekrana yazdıralım
+        window.onerror = function(msg, url, line) {
+            errorLog.innerHTML = "Hata: " + msg + " (Satır: " + line + ")";
+        };
 
         startButton.addEventListener('click', () => {
-            // Butona basınca UI gizlenir
             uiContainer.style.display = 'none';
             
-            // Ses ve Video kilidini aşmak için sessizce tetikle
-            video.muted = true;
-            video.play().then(() => {
-                video.pause();
-                video.muted = false;
-            }).catch(e => console.log("Video başlatma hatası:", e));
-
-            audio.muted = true;
-            audio.play().then(() => {
-                audio.pause();
-                audio.muted = false;
-            }).catch(e => console.log("Ses başlatma hatası:", e));
+            // Video ve ses tetikleme
+            video.play().then(() => { video.pause(); }).catch(e => errorLog.innerHTML = "Video Hatası: " + e);
+            audio.play().then(() => { audio.pause(); }).catch(e => errorLog.innerHTML = "Ses Hatası: " + e);
         });
 
-        // Resim Bulunursa
+        const imageTarget = document.getElementById('imageTarget');
         imageTarget.addEventListener('targetFound', () => {
-            console.log("Hedef bulundu!");
             video.play();
             audio.play();
         });
-
-        // Resim Kaybedilirse
         imageTarget.addEventListener('targetLost', () => {
-            console.log("Hedef kaybedildi.");
             video.pause();
             audio.pause();
         });
