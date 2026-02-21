@@ -1,74 +1,88 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Istanbul AR</title>
+    <title>Istanbul AR Deneyimi</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-aframe.prod.js"></script>
+    
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; }
-        #ui-container {
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+        
+        /* MindAR Varsayılan Arayüzlerini Gizle */
+        .mindar-ui-loading, .mindar-ui-scanning, .mindar-ui-compatibility {
+            display: none !important;
+        }
+
+        #overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; justify-content: center;
-            align-items: center; background: #000; z-index: 999;
+            background: #000; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 1000;
         }
-        #btn {
-            padding: 20px 40px; background: #ff0000; color: #fff;
-            border: none; border-radius: 50px; font-weight: bold; font-size: 18px;
+
+        #start-btn {
+            padding: 20px 60px; background: #d32f2f; color: white;
+            border: none; border-radius: 50px; font-size: 20px; font-weight: bold;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(211,47,47,0.4);
         }
-        /* MindAR'ın kendi yükleme ekranını zorla gizliyoruz */
-        .mindar-ui-loading, .mindar-ui-scanning { display: none !important; }
+
+        #msg { color: white; margin-top: 15px; text-align: center; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <div id="ui-container">
-        <button id="btn">BAŞLAT</button>
-        <p style="color: white; margin-top: 10px;">Kameraya izin verin.</p>
+    <div id="overlay">
+        <button id="start-btn">KAMERAYI BAŞLAT</button>
+        <p id="msg">Lütfen butona tıklayıp kamera izni verin.</p>
     </div>
 
     <a-scene 
         mindar-image="imageTargetSrc: ./targets_1.mind; autoStart: false; uiLoading: no; uiScanning: no;" 
-        embedded color-space="sRGB" 
-        renderer="colorManagement: true, physicallyCorrectLights" 
-        vr-mode-ui="enabled: false" 
-        device-orientation-permission-ui="enabled: false">
+        embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
+        vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
         
         <a-assets>
-            <video id="v" src="Video_2.mp4" preload="auto" loop crossorigin="anonymous" playsinline></video>
-            <audio id="s" src="muzik.mp3" preload="auto" loop crossorigin="anonymous"></audio>
+            <video id="fethiVideo" src="Video_2.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
+            <audio id="fethiMuzik" src="muzik.mp3" preload="auto" loop crossorigin="anonymous"></audio>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-entity mindar-image-target="targetIndex: 0" id="target">
-            <a-video src="#v" position="0 0 0" height="1" width="1.7"></a-video>
+        <a-entity mindar-image-target="targetIndex: 0" id="targetEntity">
+            <a-video src="#fethiVideo" position="0 0 0" height="1" width="1.8"></a-video>
         </a-entity>
     </a-scene>
 
     <script>
-        const btn = document.querySelector("#btn");
-        const ui = document.querySelector("#ui-container");
-        const scene = document.querySelector("a-scene");
-        const video = document.querySelector("#v");
-        const audio = document.querySelector("#s");
-        const target = document.querySelector("#target");
+        const startBtn = document.querySelector("#start-btn");
+        const overlay = document.querySelector("#overlay");
+        const sceneEl = document.querySelector("a-scene");
+        const video = document.querySelector("#fethiVideo");
+        const audio = document.querySelector("#fethiMuzik");
+        const targetEntity = document.querySelector("#targetEntity");
 
-        btn.addEventListener('click', () => {
-            ui.style.display = "none";
-            // MindAR'ı elle (manual) başlatıyoruz
-            scene.systems["mindar-image-system"].start(); 
-            // Sesleri hazırla
+        startBtn.addEventListener('click', () => {
+            // 1. Arayüzü gizle
+            overlay.style.display = "none";
+
+            // 2. MindAR'ı manuel başlat (Siyah ekranı çözen hamle)
+            const arSystem = sceneEl.systems["mindar-image-system"];
+            arSystem.start(); 
+
+            // 3. Ses/Video kilidini sessizce aç
             video.play().then(() => { video.pause(); });
             audio.play().then(() => { audio.pause(); });
         });
 
-        target.addEventListener("targetFound", () => {
+        // Resim algılandığında
+        targetEntity.addEventListener("targetFound", () => {
             video.play();
             audio.play();
         });
 
-        target.addEventListener("targetLost", () => {
+        // Resim kaybolduğunda
+        targetEntity.addEventListener("targetLost", () => {
             video.pause();
             audio.pause();
         });
