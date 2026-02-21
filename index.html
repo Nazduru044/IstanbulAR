@@ -7,23 +7,23 @@
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image-aframe.prod.js"></script>
     <style>
-        body, html { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
-            overflow: hidden; background-color: #000;
-        }
-        /* MindAR dairesini ve tarama ekranını tamamen kapatır */
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; }
+        
+        /* MindAR dairesini ve taranıyor yazılarını gizle */
         .mindar-ui-loading, .mindar-ui-scanning, .mindar-ui-compatibility {
             display: none !important;
         }
+
         #ui-container {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 10000;
         }
+        
         #startButton {
             padding: 20px 50px; background-color: #d32f2f; color: #fff;
             border: none; border-radius: 50px; font-size: 22px; font-weight: bold;
-            cursor: pointer;
+            cursor: pointer; box-shadow: 0 4px 20px rgba(211, 47, 47, 0.5);
         }
     </style>
 </head>
@@ -31,12 +31,13 @@
 
     <div id="ui-container">
         <button id="startButton">KAMERAYI AÇ</button>
-        <p style="color:white; margin-top:20px; font-family: sans-serif;">Lütfen bekleyin...</p>
+        <p style="color:white; margin-top:20px; font-family: sans-serif;">Kamera izni isteyince "İzin Ver" deyin.</p>
     </div>
 
     <a-scene 
         mindar-image="imageTargetSrc: ./targets_1.mind; uiLoading: no; uiScanning: no;" 
-        embedded color-space="sRGB" 
+        embedded 
+        color-space="sRGB" 
         renderer="colorManagement: true, physicallyCorrectLights" 
         vr-mode-ui="enabled: false" 
         device-orientation-permission-ui="enabled: false"
@@ -62,18 +63,33 @@
         const imageTarget = document.getElementById('imageTarget');
 
         startButton.addEventListener('click', () => {
+            // Butona basınca UI gizlenir
             uiContainer.style.display = 'none';
-            // Video ve ses kilidini aç
-            video.play().then(() => { video.pause(); });
-            audio.play().then(() => { audio.pause(); });
+            
+            // Ses ve Video kilidini aşmak için sessizce tetikle
+            video.muted = true;
+            video.play().then(() => {
+                video.pause();
+                video.muted = false;
+            }).catch(e => console.log("Video başlatma hatası:", e));
+
+            audio.muted = true;
+            audio.play().then(() => {
+                audio.pause();
+                audio.muted = false;
+            }).catch(e => console.log("Ses başlatma hatası:", e));
         });
 
+        // Resim Bulunursa
         imageTarget.addEventListener('targetFound', () => {
+            console.log("Hedef bulundu!");
             video.play();
             audio.play();
         });
 
+        // Resim Kaybedilirse
         imageTarget.addEventListener('targetLost', () => {
+            console.log("Hedef kaybedildi.");
             video.pause();
             audio.pause();
         });
