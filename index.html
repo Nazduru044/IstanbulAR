@@ -2,30 +2,39 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>İstanbul AR</title>
+    <title>Istanbul AR</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-aframe.prod.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #000; }
         .mindar-ui-loading, .mindar-ui-scanning { display: none !important; }
+        
         #ui {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center;
-            align-items: center; background: #000; z-index: 9999;
+            align-items: center; background: #000; z-index: 10000;
         }
+        
         #btn {
             padding: 20px 50px; background: #d32f2f; color: #fff;
             border: none; border-radius: 50px; font-weight: bold; font-size: 20px;
         }
-        #status { color: #555; margin-top: 15px; font-size: 12px; }
+
+        #debug-log {
+            position: absolute; bottom: 20px; width: 90%; left: 5%;
+            color: yellow; font-family: monospace; font-size: 10px;
+            background: rgba(0,0,0,0.7); z-index: 10001; pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
     <div id="ui">
-        <button id="btn">DENEYİMİ BAŞLAT</button>
-        <p id="status">Sistem hazırlandığında butona basın.</p>
+        <button id="btn">KAMERAYI BAŞLAT</button>
+        <p style="color:white; margin-top:15px;">Lütfen tıklayın ve bekleyin.</p>
     </div>
+
+    <div id="debug-log">Log: Sistem Hazır...</div>
 
     <a-scene 
         mindar-image="imageTargetSrc: ./targets_1.mind; autoStart: false; uiLoading: no; uiScanning: no;" 
@@ -48,34 +57,37 @@
         const btn = document.querySelector("#btn");
         const ui = document.querySelector("#ui");
         const scene = document.querySelector("a-scene");
+        const log = document.querySelector("#debug-log");
         const video = document.querySelector("#v");
         const audio = document.querySelector("#s");
 
+        // Hataları ekrana yazdıralım
+        window.addEventListener('error', function(e) {
+            log.innerHTML += "<br>HATA: " + e.message;
+        });
+
         btn.addEventListener('click', () => {
-            // Butona basıldığında siyah ekranı kaldır
+            log.innerHTML += "<br>Butona basıldı...";
             ui.style.display = "none";
 
-            // Sahnede MindAR sistemini bul ve zorla başlat
-            const arSystem = scene.systems["mindar-image-system"];
-            
-            // Kamerayı başlatmayı dene
-            arSystem.start(); 
-
-            // Ses ve Video kilitlerini kullanıcı etkileşimiyle aç
-            video.play().then(() => { video.pause(); });
-            audio.play().then(() => { audio.pause(); });
-            
-            console.log("Kamera sistemi tetiklendi.");
+            try {
+                const arSystem = scene.systems["mindar-image-system"];
+                arSystem.start(); 
+                log.innerHTML += "<br>Kamera sistemi başlatıldı.";
+                
+                // Sesleri uyandır
+                video.play().then(() => { video.pause(); });
+                audio.play().then(() => { audio.pause(); });
+            } catch (err) {
+                log.innerHTML += "<br>BAŞLATMA HATASI: " + err;
+            }
         });
 
         const target = document.querySelector("#target");
         target.addEventListener("targetFound", () => {
+            log.innerHTML += "<br>HEDEF BULUNDU!";
             video.play();
             audio.play();
-        });
-        target.addEventListener("targetLost", () => {
-            video.pause();
-            audio.pause();
         });
     </script>
 </body>
