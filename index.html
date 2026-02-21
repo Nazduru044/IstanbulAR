@@ -1,40 +1,30 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Istanbul AR Deneyimi</title>
+    <title>İstanbul AR</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-aframe.prod.js"></script>
-    
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
-        
-        /* MindAR Varsayılan Arayüzlerini Gizle */
-        .mindar-ui-loading, .mindar-ui-scanning, .mindar-ui-compatibility {
-            display: none !important;
-        }
-
-        #overlay {
+        body { margin: 0; overflow: hidden; background: #000; }
+        .mindar-ui-loading, .mindar-ui-scanning { display: none !important; }
+        #ui {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 1000;
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; background: #000; z-index: 9999;
         }
-
-        #start-btn {
-            padding: 20px 60px; background: #d32f2f; color: white;
-            border: none; border-radius: 50px; font-size: 20px; font-weight: bold;
-            cursor: pointer; box-shadow: 0 4px 15px rgba(211,47,47,0.4);
+        #btn {
+            padding: 20px 50px; background: #d32f2f; color: #fff;
+            border: none; border-radius: 50px; font-weight: bold; font-size: 20px;
         }
-
-        #msg { color: white; margin-top: 15px; text-align: center; font-size: 14px; }
+        #status { color: #555; margin-top: 15px; font-size: 12px; }
     </style>
 </head>
 <body>
 
-    <div id="overlay">
-        <button id="start-btn">KAMERAYI BAŞLAT</button>
-        <p id="msg">Lütfen butona tıklayıp kamera izni verin.</p>
+    <div id="ui">
+        <button id="btn">DENEYİMİ BAŞLAT</button>
+        <p id="status">Sistem hazırlandığında butona basın.</p>
     </div>
 
     <a-scene 
@@ -43,46 +33,47 @@
         vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
         
         <a-assets>
-            <video id="fethiVideo" src="Video_2.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline></video>
-            <audio id="fethiMuzik" src="muzik.mp3" preload="auto" loop crossorigin="anonymous"></audio>
+            <video id="v" src="Video_2.mp4" preload="auto" loop crossorigin="anonymous" playsinline></video>
+            <audio id="s" src="muzik.mp3" preload="auto" loop crossorigin="anonymous"></audio>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-entity mindar-image-target="targetIndex: 0" id="targetEntity">
-            <a-video src="#fethiVideo" position="0 0 0" height="1" width="1.8"></a-video>
+        <a-entity mindar-image-target="targetIndex: 0" id="target">
+            <a-video src="#v" position="0 0 0" height="1" width="1.8"></a-video>
         </a-entity>
     </a-scene>
 
     <script>
-        const startBtn = document.querySelector("#start-btn");
-        const overlay = document.querySelector("#overlay");
-        const sceneEl = document.querySelector("a-scene");
-        const video = document.querySelector("#fethiVideo");
-        const audio = document.querySelector("#fethiMuzik");
-        const targetEntity = document.querySelector("#targetEntity");
+        const btn = document.querySelector("#btn");
+        const ui = document.querySelector("#ui");
+        const scene = document.querySelector("a-scene");
+        const video = document.querySelector("#v");
+        const audio = document.querySelector("#s");
 
-        startBtn.addEventListener('click', () => {
-            // 1. Arayüzü gizle
-            overlay.style.display = "none";
+        btn.addEventListener('click', () => {
+            // Butona basıldığında siyah ekranı kaldır
+            ui.style.display = "none";
 
-            // 2. MindAR'ı manuel başlat (Siyah ekranı çözen hamle)
-            const arSystem = sceneEl.systems["mindar-image-system"];
+            // Sahnede MindAR sistemini bul ve zorla başlat
+            const arSystem = scene.systems["mindar-image-system"];
+            
+            // Kamerayı başlatmayı dene
             arSystem.start(); 
 
-            // 3. Ses/Video kilidini sessizce aç
+            // Ses ve Video kilitlerini kullanıcı etkileşimiyle aç
             video.play().then(() => { video.pause(); });
             audio.play().then(() => { audio.pause(); });
+            
+            console.log("Kamera sistemi tetiklendi.");
         });
 
-        // Resim algılandığında
-        targetEntity.addEventListener("targetFound", () => {
+        const target = document.querySelector("#target");
+        target.addEventListener("targetFound", () => {
             video.play();
             audio.play();
         });
-
-        // Resim kaybolduğunda
-        targetEntity.addEventListener("targetLost", () => {
+        target.addEventListener("targetLost", () => {
             video.pause();
             audio.pause();
         });
